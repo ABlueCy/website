@@ -108,6 +108,21 @@ This feature adds the following requirements over the previous ones:
 
 In previous discussions, alternate approaches that did not require a TabletServer refactor were suggested. Given that the TabletServer refactor brings us much closer to this feature, we’ll need to re-evaluate our options for the best approach. This will be a separate RFC.
 
+## VTDirect
+
+gRPC导致的CPU过度使用仍然是一些使用者关注的问题。此外，Vitess现在正在针对外部管理的数据库（如RDS和CloudSQL）进行部署。如此用户们不愿意支付额外的延迟成本。
+
+VTDirect是VTGate直接将请求发送到mysql实例的能力。
+
+与之前相比，这个特性增加了以下要求：
+
+* TabletServer的某些功能（如序列）应该被禁用或重定向到实际的vttablet中。
+
+* 就如tablet在topo中的添加和删除那样，TabletServer会拥有一个生命周期。变量和端点需要映射这些变化。
+
+在之前的讨论中，提出了不需要TabletServer重构的替代方法。鉴于TabletServer重构让我们更接近这个特性，我们需要重新评估我们的选项，以获得最佳方法。这将是一个单独的RFC。
+In previous discussions, alternate approaches that did not require a TabletServer refactor were suggested. Given that the TabletServer refactor brings us much closer to this feature, we’ll need to re-evaluate our options for the best approach. This will be a separate RFC.
+
 # Requirements
 
 This section describes the requirements dictated by the features.
