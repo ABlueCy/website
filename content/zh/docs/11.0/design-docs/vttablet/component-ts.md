@@ -121,11 +121,14 @@ VTDirect是VTGate直接将请求发送到mysql实例的能力。
 * 就如tablet在topo中的添加和删除那样，TabletServer会拥有一个生命周期。变量和端点需要映射这些变化。
 
 在之前的讨论中，提出了不需要TabletServer重构的替代方法。鉴于TabletServer重构让我们更接近这个特性，我们需要重新评估我们的选项，以获得最佳方法。这将是一个单独的RFC。
-In previous discussions, alternate approaches that did not require a TabletServer refactor were suggested. Given that the TabletServer refactor brings us much closer to this feature, we’ll need to re-evaluate our options for the best approach. This will be a separate RFC.
 
 # Requirements
 
 This section describes the requirements dictated by the features.
+
+# 需求
+
+本节描述了功能规定的要求。
 
 ## Stats
 
@@ -133,9 +136,19 @@ Stats (/debug/vars) should be reported in such a way that the variables from eac
 
 On the flip side, this may result in an extremely large number of variables to be exported. If so, it may be better to consolidate them. There is no right answer; We have to support both options.
 
+## Stats
+
+Stats（/debug/vars）应该像每个TabletServer中的变量被区分那样展示。vitess的惯用用法是，当组合来自不同vttablets的变量时，监控工具会将vttablets id添加为一个维度。因此，应该更改每个TabletServer，将此维度添加到其输出的变量中。
+
+另一方面，这可能会导致导出大量变量。如果是这样的话，最好是整合它们。没有正确的答案；我们不得不支持这两种选择。
+
 ### Other options considered
 
 We could have each TabletServer export a brand new set of variables by appending the tablet id to the root variable name. However, this would make it very hard for monitoring tools because they are not very good at dealing with dynamic variable names.
+
+### 其他考虑到的方案
+
+我们可以通过将tablet id附加到根变量名的方式让每个TabletServer导出一组全新的变量。但是，这将使监控工具变得非常艰难，因为它们不太擅长处理动态变量名。
 
 ## HTTP endpoints
 
