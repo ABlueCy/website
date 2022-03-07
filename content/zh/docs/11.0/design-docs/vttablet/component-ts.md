@@ -156,6 +156,12 @@ A TabletServer exports a variety of http endpoints. In general, it makes sense t
 
 We’ll start with a separate set of pages, with each set prefixed by the tablet id. For example, what was previously `/debug/consolidations` will now become `/cell-100/debug/consolidations`.
 
+## HTTP endpoints
+
+TabletServer 导出各种http端点。一般来说，每个 TabletServer 在当前进程中导出一组单独的端点才有意义。但是，在考虑底层 mysql 的性能的情况下，合并某些页面可能是有益的。
+
+我们将从一组单独的页面开始，每个页面都以平板电脑 ID 为前缀。 例如，以前的 `/debug/consolidations` 现在将变成 `/cell-100/debug/consolidations`。
+
 ### Other options considered
 
 We could keep the existing set of endpoints unchanged, and have each TabletServer add its section. But this would make it hard to troubleshoot problems related to a specific TabletServer.
