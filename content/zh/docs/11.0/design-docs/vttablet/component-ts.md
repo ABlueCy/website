@@ -160,13 +160,19 @@ We’ll start with a separate set of pages, with each set prefixed by the tablet
 
 TabletServer 导出各种http端点。一般来说，每个 TabletServer 在当前进程中导出一组单独的端点才有意义。但是，在考虑底层 mysql 的性能的情况下，合并某些页面可能是有益的。
 
-我们将从一组单独的页面开始，每个页面都以平板电脑 ID 为前缀。 例如，以前的 `/debug/consolidations` 现在将变成 `/cell-100/debug/consolidations`。
+我们将从一组单独的页面开始，每个页面都以tablet ID 为前缀。 例如，以前的 `/debug/consolidations` 现在将变成 `/cell-100/debug/consolidations`。
 
 ### Other options considered
 
 We could keep the existing set of endpoints unchanged, and have each TabletServer add its section. But this would make it hard to troubleshoot problems related to a specific TabletServer.
 
 The best-case scenario would be the “why not both” option: the original set of pages continue to exist and provide a summary from all the tablet servers. This can still be implemented as an enhancement.
+
+### 其他考虑到选择
+
+我们可以保持现有的端点不变，并让每个 TabletServer 添加它的部分。 但这会使解决与特定 TabletServer 相关的问题变得困难。
+
+最好的情况是"全都要"选项：原来的页面继续存在并提供来自所有tablet务器的摘要。 这仍然可以实现加强。
 
 ## Command line flags
 
