@@ -168,7 +168,7 @@ We could keep the existing set of endpoints unchanged, and have each TabletServe
 
 The best-case scenario would be the “why not both” option: the original set of pages continue to exist and provide a summary from all the tablet servers. This can still be implemented as an enhancement.
 
-### 其他考虑到选择
+### 其他考虑到的选项
 
 我们可以保持现有的端点不变，并让每个 TabletServer 添加它的部分。 但这会使解决与特定 TabletServer 相关的问题变得困难。
 
@@ -184,6 +184,16 @@ The input file format could be yaml. Also, this is a good opportunity for us to 
 
 Since the config option is more powerful and flexible, specifying that file in the command line will supersede all legacy flags.
 
+## 命令行标记
+
+扩展命令行标志为一千tablet服务器指定参数是不切实际的。
+
+使用配置文件是一个很好的选择。为了防止冗长，我们可以使用根配置能根据标识初始化的层次结构，这样 TabletServer 具体的配置可以继承和覆盖原始配置。
+
+输入文件格式可以是yaml格式，当然，这也是我们想出一个更好名字的好机会。
+
+由于配置选项更加强大和灵活，在命令行中指定的文件将取代所有旧标志。
+
 ### Other options considered
 
 These configs could be hosted in the topo. This is actually viable. There are two reasons why this option takes a backseat:
@@ -191,9 +201,20 @@ These configs could be hosted in the topo. This is actually viable. There are tw
 * We currently don’t have good tooling for managing data in the topo. VTCtld is currently the only way, and people have found it inadequate sometimes.
 * There are mechanisms to secure config files, which will allow it to contain secrets like the mysql passwords. This will not be possible in the case of topos.
 
+### 其他考虑到的选项
+
+这些配置可以在 topo 中管理。实际是可行的。这个选择放在次要位置有两个原因。
+
+* 我们目前没有很好的工具来管理 topo 中的数据。 VTCtld 是目前唯一的方法，有时，人们会发现它功能有所欠缺。
+* 这里需要一些机制保护配置文件，从而使文件能存放像mysql密码那样私密的东西。这是 topo 所不具备的。
+
 # Design
 
 We propose to address the above requirements with the following design elements.
+
+# 设计
+
+我们提倡使用下列设计元素来解决上述需求。
 
 ## Dimension Dropper
 
@@ -206,6 +227,18 @@ In the case of the TabletServer, specifying `TabletID` in the list of dropped di
 The reason for this approach is that there are already other use cases where the number of exported variables is excessive. This allows us to address those use cases also.
 
 It’s possible that this feature is too broad. For example, one may not want to drop the `Keyspace` dimension from all variables. If we encounter such use cases, it should be relatively easy to extend this feature to accommodate more specific rules.
+
+## Dimension Dropper
+
+dimension dropper 将会是stats包的一个新特性. 其目的是从任何多维变量中删除指定的维度。
+
+我们会引入一个以列表作为输入的新的命令行，例如：`-drop_dimensions='Keyspace,ShardName'`。随后，stats 包将删除该维度所涉及到的所有变量。
+
+在 TabletServer 的情况下，在删除的维度列表中指定“TabletID”将具有所有 TabletServers 增加一个公共计数器的效果，而不是在它们自己的平板电脑 ID 下增加不同的计数器。
+
+这个方案提出的原因是已经有一些扩展变量的案例在使用了。这样也允许我们来处理这些案例。
+
+这个特性可能太宽泛了。例如，有个场景可能不希望从所有变量中删除'Keyspace'维度。如果我们遇到这样的场景，这个特性应该很相对比较容易的扩展这个特性，来满足一些具体的规则。
 
 ## Exporter
 
@@ -225,6 +258,25 @@ A prototype of this implementation (aka embedder) is present in the vtdirect bra
 There is no need for the exporter to provide the option to consolidate without the name because the dimension dropper can cover that functionality.
 
 It’s possible to achieve backward compatibility for stats by creating an exporter with a name (tablet id), and then dropping that dimension in stats. However, it’ll work only for stats and not for the http endpoints. For this reason, we need to support explicit code paths for the anonymous exporters. Plus, it makes things more explicit.
+
+## Exporter
+
+Exporter将是一个新特性，它将在TabletServer和singleton API之间分层：stats和http。这个特性允许你创建匿名或者定义的exporters
+
+匿名Exporter表现就像你直接调用stats和http一样。存在的问题：我们需要考虑是否希望避免因重复注册而引发的panic。
+
+命名的Exporter将根据情况进行合并或分离：
+
+* 对于stats变量，它将创建一个公共基础变量，并更新与命名的Exporter匹配的维度。
+* 对于http，它会将导出一个根据命名exporter产生的新URL下的终端。
+
+目前，连接池基于不同机制有着不同的名字来导出不同的stat。Exporter特性应该支持这种前缀，这将消除这些组件中的公式化的代码。
+
+vtdirect分支中提供了该实现的原型（也称为嵌入式程序）。这需要清理并移植到最新的代码。
+
+Exporter不需要提供不带名称的合并选项，因为dimension dropper可以包含该功能。
+
+可以通过创建一个带有名称（tablet id）的Exporter，然后在stats中删除该维度，这样的方式实现统计数据的向后兼容性。然而，它只适用于统计数据，而不适用于http端点。因此，我们需要支持匿名Exporter的明确的代码路径。此外，它使事情更加清晰。
 
 ## Config loader
 
