@@ -290,11 +290,29 @@ The most popular yaml reader seems to be https://github.com/go-yaml/yaml. We’l
 
 The dbconfigs data structure will also be folded into the `Config`. This is because each tablet could potentially have different credentials.
 
+## 配置加载器
+
+TabletServer 已经将大部分（如果不是全部的话）输入标志合并到tabletenv下的 Config 结构中。现有标志将初始化 "DefaultConfig" 全局变量。如果命令行指定了一个新定义的标志，比如`-tablet\u config='filename。yaml'`，然后我们可以分支到读取yaml文件并从那里初始化配置的代码。
+
+代码将把yaml的全局部分加载到“全局”配置中。对于每个tablet特定的配置，将首先复制全局配置，然后tablet指定重载的部分会被重新写到复制的变量里面。
+
+这是一个机会让我们以使用更好的名称和数据类型重命名Config struct成员。yaml标签必须与这些新名称匹配。
+
+最流行的yaml解读器应该是 https://github.com/go-yaml/yaml。我们将基于这个开始，然后向前迭代。
+
+dbconfigs数据结构也将被包含到"Config"中。这是因为每个tablet会有不同的凭证。
+
 ### Bonus points
 
 Given that vitess uses protos everywhere, we could look at standardizing on a generic way to convert yaml to and from protos. This will allow us to look at converting all formats to yaml. If this sounds viable, we can convert the `Config` struct to be generated from a proto, and then have yaml tags that can convert into it. This will future-proof us in case we decide to go this route.
 
 On the initial search, there is no standard way to do this conversion. It would be nice if protos supported this natively as they do for json. We do have the option of using this code to build our own yaml to proto converter: https://github.com/golang/protobuf/blob/master/jsonpb/encode.go.
+
+### 加分点
+
+鉴于vitess在任何地方都使用protos，我们可以寻求一种通用的方式来实现yaml与protos之间的标准化。这将允许我们研究如何将所有格式转换为yaml。如果这听起来可行，我们可以从proto中转化'Config'结构，然后使用yaml标记转换到其中。如果我们决定走这条路，这将证明我们的未来。
+
+在最初的搜索中，没有标准的方法来进行这种转换。如果protos能够像支持json一样在本地支持这一点，那就太好了。我们可以选择使用此代码构建自己的yaml到proto转换器：https://github.com/golang/protobuf/blob/master/jsonpb/encode.go.
 
 ## TabletManager
 
@@ -312,8 +330,29 @@ The tablet manager API will be extended for cases where requests are specific to
 
 Note: VREngine’s queries are actually tablet agnostic. The user is expected to restrict their queries to the dbname of the tablet. This is not a good user experience. We should tighten up the query analyzer of vrengine to add dbname as an additional constraint or fill in the correct value as needed.
 
+## TabletManager
+
+TabletManager更改将为多模式功能整合所有内容。
+
+ActionAgent数据结构将更改为支持多重tablet服务器：
+
+* QueryServiceControl将成为列表（或map）
+* UpdateStream将被删除（已弃用）
+* TabletAlias、VREngine、tablet 和 blacklistedTables 将添加到 QueryServiceControl 列表中
+* TabletManager其他组成不受影响.
+
+在请求特定于tablet id的情况下，tablet manager API将会进行扩展。例如，`GetSchema`现在将需要tablet id作为附加参数。对于传统支持：如果tablet id为空，我们会将请求重定向到唯一的tablet。
+
+注：VREngine的查询实际上与 tablet 无关。用户将对于tablet的数据库名的查询会被受到限制。这不是一个好的用户体验。我们应该加强vrengine的查询分析器，添加dbname作为附加约束，或者根据需要填写正确的值。
+
 ## VReplication
 
 VReplication should have a relatively easy change. We already have a field named external mysql. This can be a key into the tablet id Config, which can then be used to pull the mysql credentials needed to connect to the external mysql.
 
 The multi-instance capabilities of VStreamer will naturally extend to support all the observability features we’ll add to it.
+
+## VReplication
+
+VReplication应该有一个相对容易的更改。我们已经有了一个名为external mysql的字段。这可以是tablet id配置的一个key，然后这个作为连接外部mysql所需要的一个mysql凭证。
+
+VStreamer的多实例功能自然会扩展到支持我们将添加到其中的所有可观察性功能。
